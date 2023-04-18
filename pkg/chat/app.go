@@ -92,8 +92,9 @@ func (a *App) canHandleUpdate(update *bot.Update) bool {
 	if update.Message.Chat.ID < 0 {
 		for _, e := range update.Message.Entities {
 			if e.Type == "mention" {
-				text := strings.TrimLeft(update.Message.Text[e.Offset:e.Offset+e.Length], "@")
-				if text == a.bot.Self.UserName {
+				text := update.Message.Text[e.Offset : e.Offset+e.Length]
+				if text[1:] == a.bot.Self.UserName {
+					update.Message.Text = strings.Replace(update.Message.Text, text, "", 1)
 					return true
 				}
 			}
