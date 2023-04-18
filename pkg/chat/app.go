@@ -103,6 +103,7 @@ func (a *App) canHandleUpdate(update *bot.Update) bool {
 				return true
 			}
 		}
+		return false
 	}
 	return true
 }
