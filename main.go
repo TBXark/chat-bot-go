@@ -14,5 +14,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pkg.NewApp(config.OpenaiKey, config.TelegramToken).Run()
+	pkg.NewApp(config).Run()
 }

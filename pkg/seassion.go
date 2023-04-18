@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"github.com/sashabaranov/go-openai"
 	"sync"
 )
@@ -42,12 +43,15 @@ func (s *Session) trimHistory() {
 	}
 }
 
-func (s *Session) Chat(with func([]*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error)) {
-	s.lock.Lock()
+func (s *Session) Chat(with func([]*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error)) error {
+	if !s.lock.TryLock() {
+		return errors.New("session is busy")
+	}
 	defer s.lock.Unlock()
 	s.trimHistory()
 	answer, err := with(s.history)
 	if err != nil {
 		s.history = append(s.history, answer)
 	}
+	return err
 }

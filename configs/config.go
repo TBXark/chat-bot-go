@@ -6,8 +6,21 @@ import (
 )
 
 type Config struct {
-	OpenaiKey     string `json:"openai_key"`
-	TelegramToken string `json:"telegram_token"`
+	Openai   OpenAI   `json:"openai"`
+	Telegram Telegram `json:"telegram"`
+}
+
+type OpenAI struct {
+	Key string `json:"key"`
+}
+
+type Telegram struct {
+	Token         string       `json:"token"`
+	AvailableChat []ChatConfig `json:"available_chat"`
+}
+
+type ChatConfig struct {
+	ChatID int64 `json:"chat_id"`
 }
 
 func NewConfig(path string) (*Config, error) {

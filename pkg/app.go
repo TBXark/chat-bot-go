@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/TBXark/chat-bot-go/configs"
 	bot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sashabaranov/go-openai"
 	"io"
 	"log"
+	"strings"
 )
 
 type App struct {
@@ -16,16 +18,20 @@ type App struct {
 	sessions map[int64]*Session
 }
 
-func NewApp(sk string, token string) *App {
-	api, err := bot.NewBotAPI(token)
+func NewApp(cfg *configs.Config) *App {
+	api, err := bot.NewBotAPI(cfg.Telegram.Token)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ai := openai.NewClient(sk)
+	ai := openai.NewClient(cfg.Openai.Key)
+	sessions := make(map[int64]*Session)
+	for _, chat := range cfg.Telegram.AvailableChat {
+		sessions[chat.ChatID] = NewSession(chat.ChatID)
+	}
 	return &App{
 		bot:      api,
 		ai:       ai,
-		sessions: make(map[int64]*Session),
+		sessions: sessions,
 	}
 }
 
@@ -37,11 +43,32 @@ func (a *App) Run() {
 		if update.Message == nil {
 			continue
 		}
+		if update.Message.Chat.ID < 0 {
+			canHandleThisMessage := false
+			for _, e := range update.Message.Entities {
+				if e.Type == "mention" {
+					text := strings.TrimLeft(update.Message.Text[e.Offset:e.Offset+e.Length], "@")
+					if text == a.bot.Self.UserName {
+						canHandleThisMessage = true
+						break
+					}
+				}
+			}
+			if update.Message.ReplyToMessage != nil {
+				if update.Message.ReplyToMessage.From.UserName == a.bot.Self.UserName {
+					canHandleThisMessage = true
+				}
+			}
+			if !canHandleThisMessage {
+				continue
+			}
+		}
+
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 		session, ok := a.sessions[update.Message.Chat.ID]
 		if !ok {
-			session = NewSession(update.Message.Chat.ID)
-			a.sessions[update.Message.Chat.ID] = session
+			_, _ = a.bot.Send(bot.NewMessage(update.Message.Chat.ID, "Sorry, I don't know you"))
+			continue
 		}
 		go a.handleUpdate(session, update)
 	}
@@ -53,7 +80,7 @@ func (a *App) handleUpdate(session *Session, update bot.Update) {
 			fmt.Printf("Recovered in f: %v", r)
 		}
 	}()
-	session.Chat(func(history []*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error) {
+	sErr := session.Chat(func(history []*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error) {
 		ctx := context.Background()
 		var messages []openai.ChatCompletionMessage
 		for _, m := range history {
@@ -108,4 +135,7 @@ func (a *App) handleUpdate(session *Session, update bot.Update) {
 		}
 		return &answer, nil
 	})
+	if sErr != nil {
+		_, _ = a.bot.Send(bot.NewMessage(update.Message.Chat.ID, sErr.Error()))
+	}
 }
