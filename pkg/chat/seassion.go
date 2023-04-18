@@ -1,4 +1,4 @@
-package pkg
+package chat
 
 import (
 	"errors"
@@ -19,7 +19,7 @@ type Session struct {
 }
 
 func NewSession(id int64) *Session {
-	return &Session{
+	s := &Session{
 		config: SessionConfig{
 			ID:         id,
 			MaxHistory: 8,
@@ -27,6 +27,8 @@ func NewSession(id int64) *Session {
 		},
 		history: make([]*openai.ChatCompletionMessage, 0),
 	}
+	_ = s.RestoreHistory()
+	return s
 }
 
 func (s *Session) trimHistory() {
@@ -43,6 +45,20 @@ func (s *Session) trimHistory() {
 	}
 }
 
+func (s *Session) ClearHistory() {
+	s.history = make([]*openai.ChatCompletionMessage, 0)
+}
+
+func (s *Session) SaveHistory() error {
+	// TODO: save history to db
+	return nil
+}
+
+func (s *Session) RestoreHistory() error {
+	// TODO: restore history from db
+	return nil
+}
+
 func (s *Session) Chat(with func([]*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error)) error {
 	if !s.lock.TryLock() {
 		return errors.New("session is busy")
@@ -53,5 +69,6 @@ func (s *Session) Chat(with func([]*openai.ChatCompletionMessage) (*openai.ChatC
 	if err != nil {
 		s.history = append(s.history, answer)
 	}
+	_ = s.SaveHistory()
 	return err
 }
