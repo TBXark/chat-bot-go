@@ -66,7 +66,7 @@ func (s *Session) Chat(with func([]*openai.ChatCompletionMessage) (*openai.ChatC
 	defer s.lock.Unlock()
 	s.trimHistory()
 	answer, err := with(s.history)
-	if err != nil {
+	if err == nil {
 		s.history = append(s.history, answer)
 	}
 	_ = s.SaveHistory()
