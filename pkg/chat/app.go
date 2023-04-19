@@ -6,7 +6,6 @@ import (
 	"github.com/TBXark/chat-bot-go/configs"
 	"github.com/TBXark/chat-bot-go/pkg/dao"
 	bot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/sashabaranov/go-openai"
 	"io"
 	"log"
 	"strings"
@@ -14,7 +13,6 @@ import (
 
 type App struct {
 	bot      *bot.BotAPI
-	ai       *openai.Client
 	sessions map[int64]*Session
 	handler  []Handler
 }
@@ -24,7 +22,6 @@ func NewApp(cfg *configs.Config, dao *dao.Dao) *App {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ai := openai.NewClient(cfg.Openai.Key)
 	sessions := make(map[int64]*Session)
 	for _, chat := range cfg.Telegram.AvailableChat {
 		for _, id := range chat.ChatID {
@@ -33,7 +30,6 @@ func NewApp(cfg *configs.Config, dao *dao.Dao) *App {
 	}
 	app := &App{
 		bot:      api,
-		ai:       ai,
 		sessions: sessions,
 	}
 	app.init(cfg)
