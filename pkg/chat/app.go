@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/TBXark/chat-bot-go/configs"
+	"github.com/TBXark/chat-bot-go/pkg/dao"
 	bot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sashabaranov/go-openai"
 	"io"
@@ -18,7 +19,7 @@ type App struct {
 	handler  []Handler
 }
 
-func NewApp(cfg *configs.Config) *App {
+func NewApp(cfg *configs.Config, dao *dao.Dao) *App {
 	api, err := bot.NewBotAPI(cfg.Telegram.Token)
 	if err != nil {
 		log.Fatal(err)
@@ -27,7 +28,7 @@ func NewApp(cfg *configs.Config) *App {
 	sessions := make(map[int64]*Session)
 	for _, chat := range cfg.Telegram.AvailableChat {
 		for _, id := range chat.ChatID {
-			sessions[id] = NewSession(&chat)
+			sessions[id] = NewSession(id, &chat, dao)
 		}
 	}
 	app := &App{
@@ -40,11 +41,7 @@ func NewApp(cfg *configs.Config) *App {
 }
 
 func (a *App) init(cfg *configs.Config) {
-	cmd := NewCommandHandler()
-	cmd.AddCommand(NewStartCommand())
-	_ = cmd.Bind(a.bot)
-
-	a.AddHandler(cmd)
+	a.AddHandler(NewCommandHandler(a.bot))
 	a.AddHandler(NewChatHandler(cfg))
 }
 
@@ -77,8 +74,12 @@ func (a *App) handleUpdate(update *bot.Update) {
 		_, _ = a.bot.Send(bot.NewMessage(update.Message.Chat.ID, text))
 		return
 	}
+	dep := &HandleContext{
+		api:     a.bot,
+		session: session,
+	}
 	for _, handler := range a.handler {
-		if err := handler.Handle(a.bot, session, update); err != nil {
+		if err := handler.Handle(update, dep); err != nil {
 			if !errors.Is(err, io.EOF) {
 				_, _ = a.bot.Send(bot.NewMessage(update.Message.Chat.ID, err.Error()))
 			}

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/TBXark/chat-bot-go/configs"
 	"github.com/TBXark/chat-bot-go/pkg/chat"
+	"github.com/TBXark/chat-bot-go/pkg/dao"
 	"log"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	app := chat.NewApp(config)
+	db := dao.NewDatabase(config)
+	app := chat.NewApp(config, dao.NewDao(db))
 	app.Run()
 }

@@ -20,5 +20,7 @@
 # Go workspace file
 go.work
 
+*.sqlite
 .idea
 config.json
+build

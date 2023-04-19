@@ -1,24 +1,30 @@
 package chat
 
 import (
-	"fmt"
 	bot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"io"
 )
 
 type Command interface {
 	Info() (name string, description string)
-	Handle(api *bot.BotAPI, session *Session, update *bot.Update) error
+	Handle(update *bot.Update, dependency *HandleContext) error
 }
 
 type CommandHandler struct {
 	Command map[string]Handler
 }
 
-func NewCommandHandler() *CommandHandler {
-	return &CommandHandler{
+func NewCommandHandler(api *bot.BotAPI) *CommandHandler {
+	h := &CommandHandler{
 		Command: make(map[string]Handler),
 	}
+	h.init(api)
+	return h
+}
+
+func (h *CommandHandler) init(api *bot.BotAPI) {
+	h.AddCommand(NewStartCommand())
+	_ = h.Bind(api)
 }
 
 func (h *CommandHandler) AddCommand(command Command) {
@@ -40,14 +46,14 @@ func (h *CommandHandler) Bind(api *bot.BotAPI) error {
 	return err
 }
 
-func (h *CommandHandler) Handle(api *bot.BotAPI, session *Session, update *bot.Update) error {
+func (h *CommandHandler) Handle(update *bot.Update, ctx *HandleContext) error {
 	if update.Message == nil {
 		return nil
 	}
 	if update.Message.IsCommand() {
 		command := update.Message.Command()
 		if handler, ok := h.Command[command]; ok {
-			err := handler.Handle(api, session, update)
+			err := handler.Handle(update, ctx)
 			if err != nil {
 				return err
 			}
@@ -68,9 +74,8 @@ func (s *StartCommand) Info() (name string, description string) {
 	return "start", "Start a new conversation"
 }
 
-func (s *StartCommand) Handle(api *bot.BotAPI, session *Session, update *bot.Update) error {
-	session.ClearHistory()
-	text := fmt.Sprintf("New conversation started with %d", update.Message.Chat.ID)
-	_, _ = api.Send(bot.NewMessage(update.Message.Chat.ID, text))
+func (s *StartCommand) Handle(update *bot.Update, ctx *HandleContext) error {
+	ctx.session.ClearHistory()
+	_, _ = ctx.api.Send(bot.NewMessage(update.Message.Chat.ID, "New conversation started"))
 	return nil
 }

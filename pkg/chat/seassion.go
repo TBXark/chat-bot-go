@@ -1,20 +1,27 @@
 package chat
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/TBXark/chat-bot-go/configs"
+	"github.com/TBXark/chat-bot-go/pkg/dao"
 	"github.com/sashabaranov/go-openai"
+	"log"
 	"sync"
 )
 
 type Session struct {
+	id      int64
+	lock    sync.Mutex
+	dao     *dao.Dao
 	config  *configs.ChatConfig
 	history []*openai.ChatCompletionMessage
-	lock    sync.Mutex
 }
 
-func NewSession(cfg *configs.ChatConfig) *Session {
+func NewSession(id int64, cfg *configs.ChatConfig, dao *dao.Dao) *Session {
 	s := &Session{
+		id:      id,
+		dao:     dao,
 		config:  cfg,
 		history: make([]*openai.ChatCompletionMessage, 0),
 	}
@@ -47,28 +54,51 @@ func (s *Session) trimHistory() {
 
 func (s *Session) ClearHistory() {
 	s.history = make([]*openai.ChatCompletionMessage, 0)
+	_ = s.dao.UpdateChatHistory(s.id, "")
 }
 
 func (s *Session) SaveHistory() error {
-	// TODO: save history to db
-	return nil
+	bytes, err := json.Marshal(s.history)
+	if err != nil {
+		return err
+	}
+	err = s.dao.UpdateChatHistory(s.id, string(bytes))
+	return err
 }
 
 func (s *Session) RestoreHistory() error {
-	// TODO: restore history from db
+	history, err := s.dao.FindChatHistoryByChatId(s.id)
+	if err != nil {
+		return err
+	}
+	if history.Content == "" {
+		s.history = make([]*openai.ChatCompletionMessage, 0)
+		return nil
+	}
+	var messages []*openai.ChatCompletionMessage
+	if jErr := json.Unmarshal([]byte(history.Content), &messages); jErr != nil {
+		return jErr
+	}
+	s.history = messages
 	return nil
 }
 
-func (s *Session) Chat(with func([]*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error)) error {
+func (s *Session) Chat(question *openai.ChatCompletionMessage, with func([]*openai.ChatCompletionMessage) (*openai.ChatCompletionMessage, error)) error {
 	if !s.lock.TryLock() {
 		return errors.New("session is busy")
 	}
 	defer s.lock.Unlock()
 	s.trimHistory()
-	answer, err := with(s.history)
+	history := append(s.history, question)
+	answer, err := with(history)
 	if err == nil {
-		s.history = append(s.history, answer)
+		s.history = append(history, answer)
 	}
-	_ = s.SaveHistory()
+	go func() {
+		sErr := s.SaveHistory()
+		if sErr != nil {
+			log.Printf("save history error: %v", sErr)
+		}
+	}()
 	return err
 }

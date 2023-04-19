@@ -8,6 +8,12 @@ import (
 type Config struct {
 	Openai   OpenAI   `json:"openai"`
 	Telegram Telegram `json:"telegram"`
+	Database Database `json:"database"`
+}
+
+type Database struct {
+	Type string `json:"type"`
+	Path string `json:"path"`
 }
 
 type OpenAI struct {
