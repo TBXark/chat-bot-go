@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	Openai   OpenAI   `json:"openai"`
+	OpenAI   OpenAI   `json:"openai"`
 	Telegram Telegram `json:"telegram"`
 	Database Database `json:"database"`
 }
@@ -22,6 +22,7 @@ type OpenAI struct {
 
 type Telegram struct {
 	Token         string       `json:"token"`
+	Admin         []int64      `json:"admin"`
 	AvailableChat []ChatConfig `json:"available_chat"`
 }
 

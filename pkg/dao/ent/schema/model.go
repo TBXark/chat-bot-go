@@ -50,3 +50,9 @@ func (OpenAIToken) Fields() []ent.Field {
 		field.Bool("is_active").Default(true),
 	}
 }
+
+func (OpenAIToken) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("token", "is_active"),
+	}
+}

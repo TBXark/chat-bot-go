@@ -13,8 +13,10 @@ import (
 
 type App struct {
 	bot      *bot.BotAPI
+	openai   *OpenAI
 	sessions map[int64]*Session
 	handler  []Handler
+	config   *configs.Config
 }
 
 func NewApp(cfg *configs.Config, dao *dao.Dao) *App {
@@ -30,7 +32,9 @@ func NewApp(cfg *configs.Config, dao *dao.Dao) *App {
 	}
 	app := &App{
 		bot:      api,
+		openai:   NewOpenAI(&cfg.OpenAI, dao),
 		sessions: sessions,
+		config:   cfg,
 	}
 	app.init(cfg)
 	return app
@@ -38,7 +42,7 @@ func NewApp(cfg *configs.Config, dao *dao.Dao) *App {
 
 func (a *App) init(cfg *configs.Config) {
 	a.AddHandler(NewCommandHandler(a.bot))
-	a.AddHandler(NewChatHandler(cfg))
+	a.AddHandler(NewChatHandler())
 }
 
 func (a *App) AddHandler(handler Handler) {
@@ -71,8 +75,16 @@ func (a *App) handleUpdate(update *bot.Update) {
 		return
 	}
 	dep := &HandleContext{
+		isAdmin: false,
 		api:     a.bot,
+		openai:  a.openai,
 		session: session,
+	}
+	for _, admin := range a.config.Telegram.Admin {
+		if update.Message.From.ID == admin {
+			dep.isAdmin = true
+			break
+		}
 	}
 	for _, handler := range a.handler {
 		if err := handler.Handle(update, dep); err != nil {

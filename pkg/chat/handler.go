@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/TBXark/chat-bot-go/configs"
 	bot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sashabaranov/go-openai"
 	"io"
 )
 
 type HandleContext struct {
+	isAdmin bool
 	api     *bot.BotAPI
+	openai  *OpenAI
 	session *Session
 }
 
@@ -20,13 +21,10 @@ type Handler interface {
 }
 
 type GPTHandler struct {
-	ai *openai.Client
 }
 
-func NewChatHandler(cfg *configs.Config) *GPTHandler {
-	return &GPTHandler{
-		ai: openai.NewClient(cfg.Openai.Key),
-	}
+func NewChatHandler() *GPTHandler {
+	return &GPTHandler{}
 }
 
 func (h *GPTHandler) Handle(update *bot.Update, ctx *HandleContext) error {
@@ -45,7 +43,8 @@ func (h *GPTHandler) Handle(update *bot.Update, ctx *HandleContext) error {
 			Messages:  messages,
 			Stream:    true,
 		}
-		stream, err := h.ai.CreateChatCompletionStream(context.Background(), req)
+		ai := ctx.openai.GetRandClient()
+		stream, err := ai.CreateChatCompletionStream(context.Background(), req)
 		if err != nil {
 			fmt.Printf("ChatCompletionStream error: %v\n", err)
 			return nil, err

@@ -14,6 +14,7 @@ A lightweight ChatGPT telegram bot that can run fully locally with no need for a
   },
   "telegram": {
     "token": "123456:abc",
+    "admin":[],
     "available_chat": [
       {
         "chat_id": [123, -123]
