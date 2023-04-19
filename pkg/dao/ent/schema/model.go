@@ -46,7 +46,7 @@ type OpenAIToken struct {
 
 func (OpenAIToken) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("token").MaxLen(52),
+		field.String("token").MaxLen(52).Unique(),
 		field.Bool("is_active").Default(true),
 	}
 }

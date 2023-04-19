@@ -76,6 +76,9 @@ func (o *OpenAI) AddClient(key string) error {
 	if err := client.check(); err != nil {
 		return err
 	}
+	if key == o.defaultClient.key {
+		return nil
+	}
 	err := o.dao.CreateOpenAIToken(key)
 	if err != nil {
 		return err
