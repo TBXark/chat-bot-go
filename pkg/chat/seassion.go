@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/TBXark/chat-bot-go/configs"
 	"github.com/TBXark/chat-bot-go/pkg/dao"
+	tokenizer "github.com/samber/go-gpt-3-encoder"
 	"github.com/sashabaranov/go-openai"
 	"log"
 	"sync"
@@ -35,7 +36,7 @@ func (s *Session) trimHistory() {
 	}
 	tokens := 0
 	for i := len(s.history) - 1; i >= 0; i-- {
-		tokens += len(s.history[i].Content)
+		tokens += countToken(s.history[i].Content)
 		if tokens > s.config.MaxHistoryTokens {
 			s.history = s.history[i+1:]
 			break
@@ -101,4 +102,26 @@ func (s *Session) Chat(question *openai.ChatCompletionMessage, with func([]*open
 		}
 	}()
 	return err
+}
+
+var encoder *tokenizer.Encoder
+
+func init() {
+	e, err := tokenizer.NewEncoder()
+	if err == nil {
+		encoder = e
+	}
+}
+
+func countToken(text string) int {
+	if encoder != nil {
+		encode, err := encoder.Encode(text)
+		if err != nil {
+			return len(text)
+		} else {
+			return len(encode)
+		}
+	} else {
+		return len(text)
+	}
 }
