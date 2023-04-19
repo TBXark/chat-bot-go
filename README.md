@@ -5,6 +5,10 @@ A lightweight ChatGPT telegram bot that can run fully locally with no need for a
 ```json
 
 {
+  "database": {
+    "type": "sqlite3",
+    "path": "file:db_test.sqlite?cache=shared&_fk=1"
+  },
   "openai": {
     "key": "sk-"
   },
