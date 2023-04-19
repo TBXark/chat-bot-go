@@ -2,29 +2,20 @@ package chat
 
 import (
 	"errors"
+	"github.com/TBXark/chat-bot-go/configs"
 	"github.com/sashabaranov/go-openai"
 	"sync"
 )
 
-type SessionConfig struct {
-	ID         int64
-	MaxHistory int
-	MaxTokens  int
-}
-
 type Session struct {
-	config  SessionConfig
+	config  *configs.ChatConfig
 	history []*openai.ChatCompletionMessage
 	lock    sync.Mutex
 }
 
-func NewSession(id int64) *Session {
+func NewSession(cfg *configs.ChatConfig) *Session {
 	s := &Session{
-		config: SessionConfig{
-			ID:         id,
-			MaxHistory: 8,
-			MaxTokens:  2048,
-		},
+		config:  cfg,
 		history: make([]*openai.ChatCompletionMessage, 0),
 	}
 	_ = s.RestoreHistory()
@@ -32,16 +23,25 @@ func NewSession(id int64) *Session {
 }
 
 func (s *Session) trimHistory() {
-	if len(s.history) > s.config.MaxHistory {
-		s.history = s.history[len(s.history)-s.config.MaxHistory:]
+	if len(s.history) > s.config.MaxHistoryLength {
+		s.history = s.history[len(s.history)-s.config.MaxHistoryLength:]
 	}
 	tokens := 0
 	for i := len(s.history) - 1; i >= 0; i-- {
 		tokens += len(s.history[i].Content)
-		if tokens > s.config.MaxTokens {
+		if tokens > s.config.MaxHistoryTokens {
 			s.history = s.history[i+1:]
 			break
 		}
+	}
+	if len(s.history) > 0 && s.history[0].Role == openai.ChatMessageRoleAssistant {
+		s.history = s.history[1:]
+	}
+	if len(s.history) > 0 && s.history[0].Role != openai.ChatMessageRoleSystem {
+		s.history = append([]*openai.ChatCompletionMessage{{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: s.config.Params.InitMessage,
+		}}, s.history...)
 	}
 }
 

@@ -10,10 +10,7 @@
     "token": "123456:abc",
     "available_chat": [
       {
-        "chat_id": 123
-      },
-      {
-        "chat_id": -123
+        "chat_id": [123, -123]
       }
     ]
   }

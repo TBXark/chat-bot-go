@@ -26,7 +26,9 @@ func NewApp(cfg *configs.Config) *App {
 	ai := openai.NewClient(cfg.Openai.Key)
 	sessions := make(map[int64]*Session)
 	for _, chat := range cfg.Telegram.AvailableChat {
-		sessions[chat.ChatID] = NewSession(chat.ChatID)
+		for _, id := range chat.ChatID {
+			sessions[id] = NewSession(&chat)
+		}
 	}
 	app := &App{
 		bot:      api,

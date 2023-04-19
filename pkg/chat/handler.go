@@ -15,18 +15,12 @@ type Handler interface {
 }
 
 type GPTHandler struct {
-	ai       *openai.Client
-	sessions map[int64]*Session
+	ai *openai.Client
 }
 
 func NewChatHandler(cfg *configs.Config) *GPTHandler {
-	sessions := make(map[int64]*Session)
-	for _, chat := range cfg.Telegram.AvailableChat {
-		sessions[chat.ChatID] = NewSession(chat.ChatID)
-	}
 	return &GPTHandler{
-		ai:       openai.NewClient(cfg.Openai.Key),
-		sessions: sessions,
+		ai: openai.NewClient(cfg.Openai.Key),
 	}
 }
 
