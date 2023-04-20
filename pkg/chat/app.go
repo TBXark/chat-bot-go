@@ -97,7 +97,7 @@ func (a *App) handleUpdate(update *bot.Update) {
 }
 
 func (a *App) canHandleUpdate(update *bot.Update) bool {
-	if update.Message == nil {
+	if update.Message == nil || update.Message.Text == "" {
 		return false
 	}
 	if update.Message.Chat.ID < 0 {
