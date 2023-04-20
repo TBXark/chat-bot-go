@@ -17,3 +17,6 @@ build:
 buildLinuxX86: build
 	GOOS=linux GOARCH=amd64 $(GO_BUILD) -o ./build/ ./...
 
+.PHONY: deploy
+deploy: buildLinuxX86
+	sh ./scripts/deploy.sh
