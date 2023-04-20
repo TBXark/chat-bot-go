@@ -8,9 +8,16 @@ import (
 	"log"
 )
 
+var buildVersion = "dev"
+
 func main() {
 	cfg := flag.String("config", "config.json", "path to config file")
+	ver := flag.Bool("version", false, "show version")
 	flag.Parse()
+	if *ver {
+		log.Printf("Version: %s", buildVersion)
+		return
+	}
 	config, err := configs.NewConfig(*cfg)
 	if err != nil {
 		log.Fatal(err)
