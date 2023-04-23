@@ -24,3 +24,4 @@ go.work
 .idea
 config.json
 build
+bin
