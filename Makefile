@@ -1,6 +1,6 @@
 NAME=chatbot
 BINDIR=bin
-VERSION=$(shell git rev-parse --short HEAD)
+VERSION=$(shell git describe --tags || echo "unknown version")
 BUILDTIME=$(shell date -u)
 GOBUILD=CGO_ENABLED=0 go build -trimpath -ldflags '-X "github.com/TBXark/chat-bot-go/configs.Version=$(VERSION)" \
 		-X "github.com/TBXark/chat-bot-go/configs.BuildTime=$(BUILDTIME)" \
