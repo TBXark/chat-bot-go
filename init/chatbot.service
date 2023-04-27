@@ -1,5 +1,5 @@
 [Unit]
-Description=Poe Bot Service
+Description=Chat Bot Service
 After=network.target
 
 [Service]
