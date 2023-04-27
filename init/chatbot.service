@@ -7,7 +7,7 @@ Type=simple
 User=root
 Group=nogroup
 LimitNOFILE=32768
-ExecStart=//usr/local/bin/chatbot -config=/etc/chatbot/config.json
+ExecStart=/usr/local/bin/chatbot -config=/etc/chatbot/config.json
 
 [Install]
 WantedBy=multi-user.target
