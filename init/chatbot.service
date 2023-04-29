@@ -1,5 +1,5 @@
 [Unit]
-Description=Poe Bot Service
+Description=Chat Bot Service
 After=network.target
 
 [Service]
@@ -7,8 +7,12 @@ Type=simple
 User=root
 Group=nogroup
 LimitNOFILE=32768
+<<<<<<< HEAD
 Restart=on-failure
 ExecStart=//usr/local/bin/chatbot -config=/etc/chatbot/config.json
+=======
+ExecStart=/usr/local/bin/chatbot -config=/etc/chatbot/config.json
+>>>>>>> 62b8ffc43937875347e05982e640889b3568cfe3
 
 [Install]
 WantedBy=multi-user.target
