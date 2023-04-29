@@ -154,6 +154,7 @@ func (s *TokenCommand) Handle(update *bot.Update, ctx *HandleContext) error {
 		}
 		_, _ = ctx.api.Send(bot.NewMessage(update.Message.Chat.ID, message))
 	case "help":
+		fallthrough
 	default:
 		message := "Usage:\n"
 		message += "\t/token add <token>\n"
