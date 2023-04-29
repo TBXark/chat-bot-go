@@ -67,7 +67,7 @@ func (a *App) handleUpdate(update *bot.Update) {
 	if !a.canHandleUpdate(update) {
 		return
 	}
-	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+	log.Printf("[%d] %s", update.Message.From.ID, update.Message.Text)
 	session, ok := a.sessions[update.Message.Chat.ID]
 	if !ok {
 		text := fmt.Sprintf("No session for chat %d", update.Message.Chat.ID)

@@ -2,6 +2,7 @@ package configs
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -11,13 +12,25 @@ type Config struct {
 	Database Database `json:"database"`
 }
 
+func (c Config) init() {
+	for i, chat := range c.Telegram.AvailableChat {
+		if chat.MaxHistoryLength == 0 {
+			c.Telegram.AvailableChat[i].MaxHistoryLength = 4
+		}
+		if chat.MaxHistoryTokens == 0 {
+			c.Telegram.AvailableChat[i].MaxHistoryTokens = 1024
+		}
+	}
+}
+
 type Database struct {
 	Type string `json:"type"`
 	Path string `json:"path"`
 }
 
 type OpenAI struct {
-	Key string `json:"key"`
+	Key   string `json:"key"`
+	Model string `json:"model"`
 }
 
 type Telegram struct {
@@ -38,23 +51,25 @@ type ChatGPTParams struct {
 	ExtraParams map[string]any `json:"extra_params"`
 }
 
-func NewConfig(path string) (*Config, error) {
-	config := &Config{}
+func NewConfig(path string) ([]*Config, error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(file, config)
-	if err != nil {
-		return nil, err
-	}
-	for i, chat := range config.Telegram.AvailableChat {
-		if chat.MaxHistoryLength == 0 {
-			config.Telegram.AvailableChat[i].MaxHistoryLength = 4
-		}
-		if chat.MaxHistoryTokens == 0 {
-			config.Telegram.AvailableChat[i].MaxHistoryTokens = 1024
+	list := make([]*Config, 0)
+	if e := json.Unmarshal(file, &list); e == nil {
+		if len(list) > 0 {
+			for _, c := range list {
+				c.init()
+			}
+			return list, nil
 		}
 	}
-	return config, nil
+
+	cfg := Config{}
+	if e := json.Unmarshal(file, &cfg); e == nil {
+		cfg.init()
+		return []*Config{&cfg}, nil
+	}
+	return nil, fmt.Errorf("invalid config file: %s", path)
 }

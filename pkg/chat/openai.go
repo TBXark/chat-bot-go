@@ -10,25 +10,28 @@ import (
 
 type OpenAI struct {
 	dao           *dao.Dao
+	model         string
 	defaultClient *openaiClient
 	clientQueue   []*openaiClient
 }
 
 type openaiClient struct {
-	key string
+	key   string
+	model string
 	*openai.Client
 }
 
-func newClientItem(key string) *openaiClient {
+func newClientItem(key string, model string) *openaiClient {
 	return &openaiClient{
 		key:    key,
+		model:  model,
 		Client: openai.NewClient(key),
 	}
 }
 
 func (i *openaiClient) check() error {
 	_, err := i.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
+		Model: i.model,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleUser,
@@ -42,8 +45,12 @@ func (i *openaiClient) check() error {
 func NewOpenAI(cfg *configs.OpenAI, db *dao.Dao) *OpenAI {
 	ai := &OpenAI{
 		dao:           db,
-		defaultClient: newClientItem(cfg.Key),
+		model:         cfg.Model,
+		defaultClient: newClientItem(cfg.Key, cfg.Model),
 		clientQueue:   make([]*openaiClient, 0),
+	}
+	if ai.model == "" {
+		ai.model = openai.GPT3Dot5Turbo
 	}
 	_ = ai.RestoreClients()
 	return ai
@@ -72,7 +79,7 @@ func (o *OpenAI) AllClient() []string {
 }
 
 func (o *OpenAI) AddClient(key string) error {
-	client := newClientItem(key)
+	client := newClientItem(key, o.model)
 	if err := client.check(); err != nil {
 		return err
 	}
@@ -120,4 +127,18 @@ func (o *OpenAI) RestoreClients() error {
 		o.clientQueue = append(o.clientQueue, item)
 	}
 	return nil
+}
+
+func (o *OpenAI) CreateChatCompletionStream(history []*openai.ChatCompletionMessage) (*openai.ChatCompletionStream, error) {
+	var messages []openai.ChatCompletionMessage
+	for _, m := range history {
+		messages = append(messages, *m)
+	}
+	req := openai.ChatCompletionRequest{
+		Model:    o.model,
+		Messages: messages,
+		Stream:   true,
+	}
+	ai := o.GetRandClient()
+	return ai.CreateChatCompletionStream(context.Background(), req)
 }
