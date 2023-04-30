@@ -7,7 +7,7 @@ import (
 )
 
 type Command interface {
-	Info() (name string, description string, scope []string)
+	Info() (name string, description string, scope []string, hidden bool)
 	Handle(update *bot.Update, dependency *HandleContext) error
 }
 
@@ -30,14 +30,17 @@ func (h *CommandHandler) init(api *bot.BotAPI) {
 }
 
 func (h *CommandHandler) AddCommand(command Command) {
-	name, _, _ := command.Info()
+	name, _, _, _ := command.Info()
 	h.Command[name] = command
 }
 
 func (h *CommandHandler) Bind(api *bot.BotAPI) error {
 	var commands map[string][]bot.BotCommand
 	for _, handler := range h.Command {
-		name, description, scope := handler.(Command).Info()
+		name, description, scope, hidden := handler.(Command).Info()
+		if hidden {
+			continue
+		}
 		for _, s := range scope {
 			if commands == nil {
 				commands = make(map[string][]bot.BotCommand)
@@ -80,8 +83,8 @@ func NewStartCommand() *StartCommand {
 	return &StartCommand{}
 }
 
-func (s *StartCommand) Info() (name string, description string, scope []string) {
-	return "start", "Start a new conversation", []string{"private", "group", "supergroup"}
+func (s *StartCommand) Info() (name string, description string, scope []string, hidden bool) {
+	return "start", "Start a new conversation", []string{"private", "group", "supergroup"}, false
 }
 
 func (s *StartCommand) Handle(update *bot.Update, ctx *HandleContext) error {
@@ -97,8 +100,8 @@ func NewTokenCommand() *TokenCommand {
 	return &TokenCommand{}
 }
 
-func (s *TokenCommand) Info() (name string, description string, scope []string) {
-	return "token", "Manage tokens", []string{}
+func (s *TokenCommand) Info() (name string, description string, scope []string, hidden bool) {
+	return "token", "Manage tokens", []string{}, true
 }
 
 func (s *TokenCommand) Handle(update *bot.Update, ctx *HandleContext) error {

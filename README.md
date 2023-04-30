@@ -26,14 +26,21 @@ download the latest release from [here](https://github.com/TBXark/chat-bot-go/re
     "path": "file:db_test.sqlite?cache=shared&_fk=1"
   },
   "openai": {
-    "key": "sk-"
+    "key": "sk-",
+    "model": "gpt-3.5-turbo"
   },
   "telegram": {
     "token": "123456:abc",
     "admin":[],
     "available_chat": [
       {
-        "chat_id": [123, -123]
+        "chat_id": [123, -123],
+        "params":{
+          "init_message": "You are a chat bot",
+          "extra_params": {
+            "temperature": 0.9
+          }
+        }
       }
     ]
   }
