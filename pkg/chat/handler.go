@@ -64,7 +64,7 @@ func (h *GPTHandler) Handle(update *bot.Update, ctx *HandleContext) error {
 			}
 		}
 		answerMsg := bot.NewEditMessageText(update.Message.Chat.ID, send.MessageID, answer.Content)
-		answerMsg.ParseMode = "MarkdownV2"
+		answerMsg.ParseMode = "Markdown"
 		if _, err = ctx.api.Send(answerMsg); err != nil {
 			answerMsg.ParseMode = ""
 			_, _ = ctx.api.Send(answerMsg)
